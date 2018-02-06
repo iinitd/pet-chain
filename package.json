@@ -1,0 +1,22 @@
+{
+  "name": "pet-chain",
+  "version": "1.0.0",
+  "description": "莱茨狗抢购助手",
+  "main": "index.js",
+  "author": "cogons",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cogons/pet-chain.git"
+  },
+  "dependencies": {
+    "axios": "^0.17.1",
+    "debug": "^2.6.0",
+    "iconv-lite": "^0.4.15",
+    "js-base64": "^2.4.3",
+    "js-yaml": "^3.10.0",
+    "prompt": "^1.0.0",
+    "request": "^2.83.0",
+    "underscore": "^1.8.3"
+  }
+}
