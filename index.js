@@ -2,6 +2,7 @@
 
 const ocr = require('./baidu_ocr/AipOcr')
 const fs = require("fs")
+const os = require('os')
 let config;
 try{
     config = require("./config.m")
@@ -16,7 +17,7 @@ const axios = require("axios").create({
 var apiQueryPetsOnSale = 'https://pet-chain.baidu.com/data/market/queryPetsOnSale';
 var apiTxnCreate = 'https://pet-chain.baidu.com/data/txn/create';
 const apiGen = 'https://pet-chain.baidu.com/data/captcha/gen'
-
+const exec = require('child_process').exec;
 const time = new Date().getTime()
 
 console.log(config)
@@ -31,25 +32,41 @@ const pr = (v) => {
 }
 
 
-
-
 const APP_ID = config.baidu_ocr.APP_ID
 const API_KEY = config.baidu_ocr.API_KEY
 const SECRET_KEY = config.baidu_ocr.SECRET_KEY
 const client = new ocr(APP_ID, API_KEY, SECRET_KEY);
 
 function requirements(pet) {
-    return pet.amount <= config.threshold[pet.rareDegree]
+    if(config.show_affordable_message){
+        console.log("宠物价格为：",pet.amount,"，宠物等级为：",pet.rareDegree)
+        console.log("你设置的对应等级购买阈值为：",config.threshold[pet.rareDegree])
+    }
+    if(pet.amount <= config.threshold[pet.rareDegree]){
+        if(config.show_affordable_message) console.log("买得起！")
+        return true
+    } else{
+        if(config.show_affordable_message) console.log("买不起...")
+        return false
+    }
+
 }
+
+function sleep(ms) {
+	return new Promise(resolve => setTimeout(resolve, ms))
+}
+
 
 
 (async function() {
     let cnt = 0
+    let query_time=0;
+    while (cnt++ < config.query_amount) {
 
-    while (cnt++ < config.query_amount||3000) {
+        await sleep(500)
 
         try {
-            console.log(`第${cnt}次查询！`)
+            
             const pets = await axios.post(apiQueryPetsOnSale, {
                 "pageNo": 1,
                 "pageSize": 20,
@@ -62,11 +79,16 @@ function requirements(pet) {
                 "tpl": ""
             })
 
+            console.log(`第${++query_time}次查询！`)
+
             for (let i = 0; i < pets.data.data.petsOnSale.length; i++) {
 
                 let pet = pets.data.data.petsOnSale[i]
 
-                if (!requirements(pet)) continue;
+                if (!requirements(pet)) {
+                    continue
+                }
+
 
                 console.log(pet)
 
@@ -77,6 +99,7 @@ function requirements(pet) {
                 })
 
                 fs.writeFileSync('yzm.png', yzm.data.data.img, 'base64');
+                if(os.platform()=="darwin") exec('open yzm.png')
                 let yzm_res;
                 if (config.yzm_method == "baidu") {
                     var image = fs.readFileSync("yzm.png").toString("base64")
@@ -91,6 +114,8 @@ function requirements(pet) {
                     yzm_res = yzm_m.yzm
                 }
 
+                
+
                 const res = await axios.post(apiTxnCreate, {
                     "validCode": pet.validCode,
                     "seed": yzm.data.data.seed,
@@ -102,12 +127,14 @@ function requirements(pet) {
                     "tpl": ""
                 })
 
+
+
+
                 console.log(res.data)
+                
 
             }
         } catch (e) {
-
-            console.log("查询超时...")
 
         }
     }
