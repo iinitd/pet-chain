@@ -7,12 +7,10 @@
 # 首次使用
 
 1. 安装node环境
-
 2. clone项目到本地
-
-3. 修改配置 config.js
-
-4. 运行 node index.js
+3. 运行 npm install 或者 yarn
+4. 修改配置 config.js
+5. 运行 node index.js
 
 # 配置说明
 
@@ -36,7 +34,6 @@
 # 其他说明
 
 1. 查询超时是百度服务器没有返回相关数据，只需让脚本继续重试即可
-
-2. 在手动验证码模式下，需要手动输入 yzm.png 中的内容，并敲 enter 进入购买环节。
-
-3. 由于验证码的存在，抢狗存在失败几率，请耐心尝试~
+2. 在手动验证码模式下，需要手动输入 yzm.png 中的内容，并敲 enter 进入购买环节
+3. 由于验证码的存在，抢狗还需靠手速，请耐心尝试~
+4. 出现 SyntaxError: Unexpected token function 请升级 node 版本到 7.6 以上
