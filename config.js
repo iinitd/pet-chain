@@ -5,6 +5,7 @@ module.exports = {
         API_KEY: '',
         SECRET_KEY: ''
     },
+    reverse:true, // 从后往前购买
     yzm_method:"manual", // "baidu" || "manual"
     threshold:[490,490,490,490,490], // 从普通到神话的购买上限
     query_amount:3000, //查询次数

@@ -4,15 +4,20 @@ const ocr = require('./baidu_ocr/AipOcr')
 const fs = require("fs")
 const os = require('os')
 let config;
-try{
+try {
     config = require("./config.m")
-} catch(e){
-    config = require("./config") 
+} catch (e) {
+    config = require("./config")
 }
 const prompt = require('prompt')
 var Base64 = require('js-base64').Base64;
 const axios = require("axios").create({
-    headers: { 'Cookie': config.cookie }
+    headers: {
+        'Cookie': config.cookie,
+        'Host': 'pet-chain.baidu.com',
+        'Origin': 'https://pet-chain.baidu.com',
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Mobile Safari/537.36'
+    }
 });
 var apiQueryPetsOnSale = 'https://pet-chain.baidu.com/data/market/queryPetsOnSale';
 var apiTxnCreate = 'https://pet-chain.baidu.com/data/txn/create';
@@ -38,35 +43,35 @@ const SECRET_KEY = config.baidu_ocr.SECRET_KEY
 const client = new ocr(APP_ID, API_KEY, SECRET_KEY);
 
 function requirements(pet) {
-    if(config.show_affordable_message){
-        console.log("宠物价格为：",pet.amount,"，宠物等级为：",pet.rareDegree)
-        console.log("你设置的对应等级购买阈值为：",config.threshold[pet.rareDegree])
+    if (config.show_affordable_message) {
+        console.log("宠物价格为：", pet.amount, "，宠物等级为：", pet.rareDegree)
+        console.log("你设置的对应等级购买阈值为：", config.threshold[pet.rareDegree])
     }
-    if(pet.amount <= config.threshold[pet.rareDegree]){
-        if(config.show_affordable_message) console.log("买得起！")
+    if (pet.amount <= config.threshold[pet.rareDegree]) {
+        if (config.show_affordable_message) console.log("买得起！")
         return true
-    } else{
-        if(config.show_affordable_message) console.log("买不起...")
+    } else {
+        if (config.show_affordable_message) console.log("买不起...")
         return false
     }
 
 }
 
 function sleep(ms) {
-	return new Promise(resolve => setTimeout(resolve, ms))
+    return new Promise(resolve => setTimeout(resolve, ms))
 }
 
 
 
 (async function() {
     let cnt = 0
-    let query_time=0;
+    let query_time = 0;
     while (cnt++ < config.query_amount) {
 
         await sleep(500)
 
         try {
-            
+
             const pets = await axios.post(apiQueryPetsOnSale, {
                 "pageNo": 1,
                 "pageSize": 20,
@@ -80,7 +85,8 @@ function sleep(ms) {
             })
 
             console.log(`第${++query_time}次查询！`)
-
+            console.log("目前最低价：" + pets.data.data.petsOnSale[0].amount)
+            if(config.reverse) pets.data.data.petsOnSale = pets.data.data.petsOnSale.reverse()
             for (let i = 0; i < pets.data.data.petsOnSale.length; i++) {
 
                 let pet = pets.data.data.petsOnSale[i]
@@ -88,7 +94,6 @@ function sleep(ms) {
                 if (!requirements(pet)) {
                     continue
                 }
-
 
                 console.log(pet)
 
@@ -99,7 +104,7 @@ function sleep(ms) {
                 })
 
                 fs.writeFileSync('yzm.png', yzm.data.data.img, 'base64');
-                if(os.platform()=="darwin") exec('open yzm.png')
+                if (os.platform() == "darwin") exec('open yzm.png')
                 let yzm_res;
                 if (config.yzm_method == "baidu") {
                     var image = fs.readFileSync("yzm.png").toString("base64")
@@ -114,27 +119,30 @@ function sleep(ms) {
                     yzm_res = yzm_m.yzm
                 }
 
-                
+                if (yzm_res) {
 
-                const res = await axios.post(apiTxnCreate, {
-                    "validCode": pet.validCode,
-                    "seed": yzm.data.data.seed,
-                    "captcha": yzm_res,
-                    "petId": pet.petId,
-                    "requestId": time,
-                    "amount": pet.amount,
-                    "appId": 1,
-                    "tpl": ""
-                })
+                    const res = await axios.post(apiTxnCreate, {
+                        "validCode": pet.validCode,
+                        "seed": yzm.data.data.seed,
+                        "captcha": yzm_res,
+                        "petId": pet.petId,
+                        "requestId": time,
+                        "amount": pet.amount,
+                        "appId": 1,
+                        "tpl": ""
+                    })
+
+                    console.log(res.data)
+
+                }
 
 
 
-
-                console.log(res.data)
-                
 
             }
         } catch (e) {
+
+            console.log(e.code)
 
         }
     }
