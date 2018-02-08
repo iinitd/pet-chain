@@ -103,6 +103,8 @@ function sleep(ms) {
                     "tpl": ""
                 })
 
+                if(!yzm.data.data.img) continue;
+
                 fs.writeFileSync('yzm.png', yzm.data.data.img, 'base64');
                 if (os.platform() == "darwin") exec('open yzm.png')
                 let yzm_res;
